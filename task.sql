@@ -38,7 +38,9 @@ CREATE TABLE Evidence (
 CREATE TABLE LeavesEvidence AS EDGE;
 CREATE TABLE ConfessesToCrime AS EDGE;
 CREATE TABLE CommitsCrime AS EDGE;
-CREATE TABLE Investigating AS EDGE;
+CREATE TABLE Investigating (
+	complexity INT NOT NULL
+) AS EDGE;
 
 ALTER TABLE LeavesEvidence ADD CONSTRAINT EC_LeavesEvidence CONNECTION (Criminals TO Evidence);
 ALTER TABLE ConfessesToCrime ADD CONSTRAINT EC_ConfessesToCrime CONNECTION (Criminals TO Crimes);
@@ -149,28 +151,28 @@ VALUES
 	((SELECT $node_id FROM Criminals WHERE id = 6), (SELECT $node_id FROM Crimes WHERE id = 4)),
 	((SELECT $node_id FROM Criminals WHERE id = 7), (SELECT $node_id FROM Crimes WHERE id = 10));
 
-INSERT INTO Investigating ($from_id, $to_id)
+INSERT INTO Investigating ($from_id, $to_id, complexity)
 VALUES
-	((SELECT $node_id FROM Detectives WHERE id = 1), (SELECT $node_id FROM Crimes WHERE id = 1)),
-	((SELECT $node_id FROM Detectives WHERE id = 1), (SELECT $node_id FROM Crimes WHERE id = 4)),
-	((SELECT $node_id FROM Detectives WHERE id = 1), (SELECT $node_id FROM Crimes WHERE id = 6)),
-	((SELECT $node_id FROM Detectives WHERE id = 1), (SELECT $node_id FROM Crimes WHERE id = 7)),
-	((SELECT $node_id FROM Detectives WHERE id = 1), (SELECT $node_id FROM Crimes WHERE id = 8)),
-	((SELECT $node_id FROM Detectives WHERE id = 2), (SELECT $node_id FROM Crimes WHERE id = 1)),
-	((SELECT $node_id FROM Detectives WHERE id = 2), (SELECT $node_id FROM Crimes WHERE id = 4)),
-	((SELECT $node_id FROM Detectives WHERE id = 7), (SELECT $node_id FROM Crimes WHERE id = 8)),
-	((SELECT $node_id FROM Detectives WHERE id = 7), (SELECT $node_id FROM Crimes WHERE id = 2)),
-	((SELECT $node_id FROM Detectives WHERE id = 3), (SELECT $node_id FROM Crimes WHERE id = 9)),
-	((SELECT $node_id FROM Detectives WHERE id = 6), (SELECT $node_id FROM Crimes WHERE id = 9)),
-	((SELECT $node_id FROM Detectives WHERE id = 6), (SELECT $node_id FROM Crimes WHERE id = 5)),
-	((SELECT $node_id FROM Detectives WHERE id = 9), (SELECT $node_id FROM Crimes WHERE id = 2)),
-	((SELECT $node_id FROM Detectives WHERE id = 9), (SELECT $node_id FROM Crimes WHERE id = 3)),
-	((SELECT $node_id FROM Detectives WHERE id = 9), (SELECT $node_id FROM Crimes WHERE id = 10)),
-	((SELECT $node_id FROM Detectives WHERE id = 4), (SELECT $node_id FROM Crimes WHERE id = 3)),
-	((SELECT $node_id FROM Detectives WHERE id = 5), (SELECT $node_id FROM Crimes WHERE id = 11)),
-	((SELECT $node_id FROM Detectives WHERE id = 10), (SELECT $node_id FROM Crimes WHERE id = 11)),
-	((SELECT $node_id FROM Detectives WHERE id = 10), (SELECT $node_id FROM Crimes WHERE id = 5)),
-	((SELECT $node_id FROM Detectives WHERE id = 8), (SELECT $node_id FROM Crimes WHERE id = 5));
+	((SELECT $node_id FROM Detectives WHERE id = 1), (SELECT $node_id FROM Crimes WHERE id = 1), 10),
+	((SELECT $node_id FROM Detectives WHERE id = 1), (SELECT $node_id FROM Crimes WHERE id = 4), 6),
+	((SELECT $node_id FROM Detectives WHERE id = 1), (SELECT $node_id FROM Crimes WHERE id = 6), 11),
+	((SELECT $node_id FROM Detectives WHERE id = 1), (SELECT $node_id FROM Crimes WHERE id = 7), 4),
+	((SELECT $node_id FROM Detectives WHERE id = 1), (SELECT $node_id FROM Crimes WHERE id = 8), 7),
+	((SELECT $node_id FROM Detectives WHERE id = 2), (SELECT $node_id FROM Crimes WHERE id = 1), 7),
+	((SELECT $node_id FROM Detectives WHERE id = 2), (SELECT $node_id FROM Crimes WHERE id = 4), 3),
+	((SELECT $node_id FROM Detectives WHERE id = 7), (SELECT $node_id FROM Crimes WHERE id = 8), 8),
+	((SELECT $node_id FROM Detectives WHERE id = 7), (SELECT $node_id FROM Crimes WHERE id = 2), 3),
+	((SELECT $node_id FROM Detectives WHERE id = 3), (SELECT $node_id FROM Crimes WHERE id = 9), 4),
+	((SELECT $node_id FROM Detectives WHERE id = 6), (SELECT $node_id FROM Crimes WHERE id = 9), 5),
+	((SELECT $node_id FROM Detectives WHERE id = 6), (SELECT $node_id FROM Crimes WHERE id = 5), 2),
+	((SELECT $node_id FROM Detectives WHERE id = 9), (SELECT $node_id FROM Crimes WHERE id = 2), 6),
+	((SELECT $node_id FROM Detectives WHERE id = 9), (SELECT $node_id FROM Crimes WHERE id = 3), 4),
+	((SELECT $node_id FROM Detectives WHERE id = 9), (SELECT $node_id FROM Crimes WHERE id = 10), 4),
+	((SELECT $node_id FROM Detectives WHERE id = 4), (SELECT $node_id FROM Crimes WHERE id = 3), 5),
+	((SELECT $node_id FROM Detectives WHERE id = 5), (SELECT $node_id FROM Crimes WHERE id = 11), 3),
+	((SELECT $node_id FROM Detectives WHERE id = 10), (SELECT $node_id FROM Crimes WHERE id = 11), 1),
+	((SELECT $node_id FROM Detectives WHERE id = 10), (SELECT $node_id FROM Crimes WHERE id = 5), 5),
+	((SELECT $node_id FROM Detectives WHERE id = 8), (SELECT $node_id FROM Crimes WHERE id = 5), 3);
 
 
 
@@ -244,3 +246,38 @@ FROM Criminals AS criminal1,
      LeavesEvidence FOR PATH AS le2
 WHERE MATCH(SHORTEST_PATH(criminal1(-(le1)->ev<-(le2)-criminal2){1,3}))
   AND criminal1.Name = N'Мориарти';
+
+
+
+
+
+-- power bi
+SELECT person.id AS PersonID, person.Name AS PersonName, CONCAT('Criminal', person.id) AS PersonImage,
+       crime.id AS CrimeID, crime.Title AS CrimeName, CONCAT('Crime', crime.id) AS CrimeImage
+FROM Criminals AS person
+   , CommitsCrime
+   , Crimes AS crime
+WHERE MATCH(person-(CommitsCrime)->crime)
+
+SELECT person.id AS PersonID, person.Name AS PersonName, CONCAT('Criminal', person.id) AS PersonImage,
+       evidence.id AS EvidenceID, evidence.Title AS EvidenceName, CONCAT('Evidence', evidence.id) AS EvidenceImage
+FROM Criminals AS person
+   , LeavesEvidence
+   , Evidence AS evidence
+WHERE MATCH(person-(LeavesEvidence)->evidence)
+
+
+SELECT person.id AS PersonID, person.Name AS PersonName, CONCAT('Criminal', person.id) AS PersonImage,
+       crime.id AS CrimeID, crime.Title AS CrimeName, CONCAT('Crime', crime.id) AS CrimeImage
+FROM Criminals AS person
+   , ConfessesToCrime
+   , Crimes AS crime
+WHERE MATCH(person-(ConfessesToCrime)->crime)
+
+SELECT detective.id AS DetectiveID, Detective.Name AS DetectiveName, CONCAT('Detective', detective.id) AS DetectiveImage,
+       crime.id AS CrimeID, crime.Title AS CrimeName, CONCAT('Crime', crime.id) AS CrimeImage,
+	   complexity
+FROM Detectives AS detective
+   , Investigating
+   , Crimes AS crime
+WHERE MATCH(detective-(Investigating)->crime)
